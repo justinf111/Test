@@ -38,6 +38,7 @@ if(isset($options['file'])) {
         $user->setSurname($userFields['email']);
         return $user;
     }, $users);
+
 class User {
     public $name;
     public $surname;
