@@ -21,11 +21,19 @@ if(isset($options['help'])) {
     echo "-h – MySQL host\n";
     echo "--help – which will output the above list of directives with details.\n";
 }
-
-if(isset($options['create_table'])) {
+if(isset($options['create_table']) && !isset($options['dry_run'])) {
     $db = new Database($options['h'], $options['u'], $options['p'] ?? '',$options['d'] ?? 'user_upload');
     $db->open();
-    $db->query("CREATE TABLE users");
+    $db->query("DROP TABLE IF EXISTS users");
+    $db->query("CREATE TABLE Users (
+        id int NOT NULL AUTO_INCREMENT,
+        surname varchar(255),
+        name varchar(255),
+        email varchar(255),
+        PRIMARY KEY (id)
+    );");
+    $db->query("CREATE UNIQUE INDEX index_name
+                    ON Users (email);");
     $db->close();
 }
 
