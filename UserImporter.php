@@ -59,6 +59,39 @@ class User {
         $this->email = strtolower($email);
     }
 }
+
+class Database {
+    private $connection;
+    private $host;
+    private $username;
+    private $password;
+
+    public function __construct($host, $username, $password)
+    {
+        $this->host = $host;
+        $this->username = $username;
+        $this->password = $password;
+    }
+
+    public function isConnected() {
+        if ($this->connection->connect_error) {
+            die("Connection failed: " . $this->connection->connect_error);
+        }
+    }
+
+    public function query($sql) {
+        $this->connection = new mysqli($this->host, $this->username, $this->password);
+        $this->isConnected();
+        if ($this->connection->query($sql) === TRUE) {
+            echo "Query was successfully";
+        } else {
+            echo "Error executing the query: " . $this->connection->error;
+        }
+
+        $this->connection->close();
+    }
+}
+
 function trimWhitespace($item) {
     return trim($item);
 }
