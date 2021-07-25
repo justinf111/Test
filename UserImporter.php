@@ -45,7 +45,10 @@ if(isset($options['file']) && !isset($options['create_table'])) {
         die('The file must be on file format CSV');
     }
     $file = fopen($options['file'], "r");
-    $header = array_map('trimWhitespace', fgetcsv($file));
+    $header = array_map(function($item) {
+        return trim($item);
+    }, fgetcsv($file));
+
     if(!array_diff($header, ['name', 'surname', 'email']) == []) {
         die('The CSV file does not contain the required fields (name, surname, email) for importing users. ');
     }
@@ -55,7 +58,9 @@ if(isset($options['file']) && !isset($options['create_table'])) {
     }
 
     $users = array_map(function ($user) {
-        $userFields = array_map('trimWhitespace', $user);
+        $userFields = array_map(function($item) {
+            return trim($item);
+        }, $user);
         $user = new User;
         $user->setEmail($userFields['name']);
         $user->setName($userFields['surname']);
@@ -116,8 +121,4 @@ class Database {
 
         $this->connection->close();
     }
-}
-
-function trimWhitespace($item) {
-    return trim($item);
 }
