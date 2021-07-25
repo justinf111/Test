@@ -3,6 +3,7 @@
 $shortopts  = "h:";
 $shortopts .= "u:";
 $shortopts .= "p:";
+$shortopts .= "d:";
 
 $longopts  = [
     "help",
@@ -19,6 +20,7 @@ if(isset($options['help'])) {
     echo "-u – MySQL username\n";
     echo "-p – MySQL password\n";
     echo "-h – MySQL host\n";
+    echo "-d – MySQL database\n";
     echo "--help – which will output the above list of directives with details.\n";
 }
 if(isset($options['create_table']) && !isset($options['dry_run'])) {
