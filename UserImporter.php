@@ -22,22 +22,38 @@ if(isset($options['help'])) {
     echo "--help – which will output the above list of directives with details.\n";
 }
 
-if(isset($options['file'])) {
-    $file = fopen($options['file'],"r");
+if(isset($options['create_table'])) {
+    $db = new Database($options['h'], $options['u'], $options['p'] ?? '',$options['d'] ?? 'user_upload');
+    $db->open();
+    $db->query("CREATE TABLE users");
+    $db->close();
+}
+
+if(isset($options['file']) && !isset($options['create_table'])) {
+    $extension = pathinfo($options['file'], PATHINFO_EXTENSION);
+    if($extension != 'csv') {
+        die('The file must be on file format CSV');
+    }
+    $file = fopen($options['file'], "r");
     $header = array_map('trimWhitespace', fgetcsv($file));
+    if(!array_diff($header, ['name', 'surname', 'email']) == []) {
+        die('The CSV file does not contain the required fields (name, surname, email) for importing users. ');
+    }
     $users = [];
     while ($row = fgetcsv($file)) {
         $users[] = array_combine($header, $row);
     }
 
-    $users = array_map(function($user) {
-        $userFields = array_map('trimWhitespace',$user);
+    $users = array_map(function ($user) {
+        $userFields = array_map('trimWhitespace', $user);
         $user = new User;
         $user->setEmail($userFields['name']);
         $user->setName($userFields['surname']);
         $user->setSurname($userFields['email']);
         return $user;
     }, $users);
+}
+
 
 class User {
     public $name;
