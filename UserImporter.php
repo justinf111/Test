@@ -23,20 +23,25 @@ if(isset($options['help'])) {
     echo "-d – MySQL database\n";
     echo "--help – which will output the above list of directives with details.\n";
 }
-if(isset($options['create_table']) && !isset($options['dry_run'])) {
+$db = null;
+
+if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
     $db = new Database($options['h'], $options['u'], $options['p'] ?? '',$options['d'] ?? 'user_upload');
     $db->open();
+}
+
+if(isset($options['create_table']) && !isset($options['dry_run'])) {
     $db->query("DROP TABLE IF EXISTS users");
-    $db->query("CREATE TABLE Users (
+    $db->query("CREATE TABLE users (
         id int NOT NULL AUTO_INCREMENT,
         surname varchar(255),
         name varchar(255),
         email varchar(255),
         PRIMARY KEY (id)
     );");
-    $db->query("CREATE UNIQUE INDEX index_name
+    $db->query("CREATE UNIQUE INDEX email
                     ON Users (email);");
-    $db->close();
+    echo "Users Table has been created\n";
 }
 
 if(isset($options['file']) && !isset($options['create_table'])) {
@@ -69,6 +74,9 @@ if(isset($options['file']) && !isset($options['create_table'])) {
     }, $users);
 }
 
+if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
+    $db->close();
+}
 
 class User {
     public $name;
