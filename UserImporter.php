@@ -28,6 +28,7 @@ $db = null;
 if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
     $db = new Database($options['h'], $options['u'], $options['p'] ?? '',$options['d'] ?? 'user_upload');
     $db->open();
+    $db->isConnected();
 }
 
 if(isset($options['create_table']) && !isset($options['dry_run'])) {
@@ -116,7 +117,7 @@ class Database {
 
     public function isConnected() {
         if ($this->connection->connect_error) {
-            die("Connection failed: " . $this->connection->connect_error);
+            die("Connection failed: " . $this->connection->connect_error."\n");
         }
     }
 
