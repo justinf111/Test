@@ -104,12 +104,14 @@ class Database {
     private $host;
     private $username;
     private $password;
+    private $database;
 
-    public function __construct($host, $username, $password)
+    public function __construct($host, $username, $password, $database)
     {
         $this->host = $host;
         $this->username = $username;
         $this->password = $password;
+        $this->database = $database;
     }
 
     public function isConnected() {
@@ -126,7 +128,11 @@ class Database {
         } else {
             echo "Error executing the query: " . $this->connection->error;
         }
+    public function open() {
+        $this->connection = new mysqli($this->host, $this->username, $this->password, $this->database, 3306);
+    }
 
+    public function close() {
         $this->connection->close();
     }
 }
