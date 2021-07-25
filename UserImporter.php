@@ -58,26 +58,44 @@ if(isset($options['file']) && !isset($options['create_table'])) {
     if(!array_diff($header, ['name', 'surname', 'email']) == []) {
         die('The CSV file does not contain the required fields (name, surname, email) for importing users. ');
     }
+    echo "The file is a valid CSV file.\n";
+    echo "Processing users.\n";
     $users = [];
     while ($row = fgetcsv($file)) {
         $users[] = array_combine($header, $row);
     }
 
-    $users = array_map(function ($user) {
-        $userFields = array_map(function($item) {
+    $users = array_map(function ($user) use($db, $options){
+        $userFields = array_map(function($item){
             return trim($item);
         }, $user);
         $user = new User;
-        $user->setEmail($userFields['name']);
-        $user->setName($userFields['surname']);
-        $user->setSurname($userFields['email']);
-        return $user;
+        $user->setName($userFields['name']);
+        $user->setSurname($userFields['surname']);
+        $user->setEmail($userFields['email']);
+        if (!filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            echo $user->name. " ". $user->surname. " has an invalid email (".$user->email.")\n";
+        } else {
+            echo $user->name. " ". $user->surname. " Email: ".$user->email. "\n";
+            if(!isset($options['dry_run'])) {
+                $db->query('INSERT INTO users(name, surname, email) VALUES (?, ?, ?)', 'sss', [
+                        $user->name,
+                        $user->surname,
+                        $user->email,
+                    ]
+                );
+            }
+            return $user;
+        }
+
     }, $users);
+    echo "Finished processing users.\n";
 }
 
 if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
     $db->close();
 }
+
 
 class User {
     public $name;
@@ -101,6 +119,7 @@ class User {
 }
 
 class Database {
+    /** @var mysqli */
     private $connection;
     private $host;
     private $username;
@@ -121,14 +140,18 @@ class Database {
         }
     }
 
-    public function query($sql) {
-        $this->connection = new mysqli($this->host, $this->username, $this->password);
-        $this->isConnected();
-        if ($this->connection->query($sql) === TRUE) {
-            echo "Query was successfully";
-        } else {
-            echo "Error executing the query: " . $this->connection->error;
+    public function query($sql, $types = '', $data = []) {
+        $statement = $this->connection->prepare($sql);
+        if($types != '' && count($data) > 0) {
+            $statement->bind_param($types, ...$data);
         }
+        if ($statement->execute() === TRUE) {
+            echo "Query was successfully\n";
+        } else {
+            echo "Error executing the query: " . $this->connection->error."\n";
+        }
+    }
+
     public function open() {
         $this->connection = new mysqli($this->host, $this->username, $this->password, $this->database, 3306);
     }
