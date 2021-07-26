@@ -14,14 +14,14 @@ $longopts  = [
 $options = getopt($shortopts, $longopts);
 
 if(isset($options['help'])) {
-    echo "--file [csv file name] – this is the name of the CSV to be parsed\n";
-    echo "--create_table – this will cause the MySQL users table to be built (and no further action will be taken)\n";
-    echo "--dry_run – this will be used with the --file directive in case we want to run the script but not insert into the DB. All other functions will be executed, but the database won't be altered\n";
-    echo "-u – MySQL username\n";
-    echo "-p – MySQL password\n";
-    echo "-h – MySQL host\n";
-    echo "-d – MySQL database\n";
-    echo "--help – which will output the above list of directives with details.\n";
+    fwrite(STDOUT, "--file [csv file name] – this is the name of the CSV to be parsed. It must contain the following headers: name, surname, email\n");
+    fwrite(STDOUT, "--create_table – this will cause the MySQL users table to be built or rebuilt if it already exists (and no further action will be taken)\n");
+    fwrite(STDOUT, "--dry_run – this will be used with the --file directive in case we want to run the script but not insert into the DB. All other functions will be executed, but the database won't be altered\n");
+    fwrite(STDOUT, "-u – MySQL username\n");
+    fwrite(STDOUT, "-p – MySQL password (will prompt you to enter in password, no value needed initially)\n");
+    fwrite(STDOUT, "-h – MySQL host\n");
+    fwrite(STDOUT, "-d – MySQL database (defaults to user_upload)\n");
+    fwrite(STDOUT, "--help – which will output the above list of directives with details.\n");
 }
 $db = null;
 
@@ -42,7 +42,7 @@ if(isset($options['create_table']) && !isset($options['dry_run'])) {
     );");
     $db->query("CREATE UNIQUE INDEX email
                     ON Users (email);");
-    echo "Users Table has been created\n";
+    fwrite(STDOUT,"Users Table has been created\n");
 }
 
 if(isset($options['file']) && !isset($options['create_table'])) {
@@ -58,8 +58,8 @@ if(isset($options['file']) && !isset($options['create_table'])) {
     if(!array_diff($header, ['name', 'surname', 'email']) == []) {
         die('The CSV file does not contain the required fields (name, surname, email) for importing users. ');
     }
-    echo "The file is a valid CSV file.\n";
-    echo "Processing users.\n";
+    fwrite(STDOUT,"The file is a valid CSV file.\n");
+    fwrite(STDOUT, "Processing users.\n");
     $users = [];
     while ($row = fgetcsv($file)) {
         $users[] = array_combine($header, $row);
@@ -74,9 +74,9 @@ if(isset($options['file']) && !isset($options['create_table'])) {
         $user->setSurname($userFields['surname']);
         $user->setEmail($userFields['email']);
         if (!filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
-            echo $user->name. " ". $user->surname. " has an invalid email (".$user->email.")\n";
+            fwrite(STDOUT, $user->name. " ". $user->surname. " has an invalid email (".$user->email.") and will not be inserted into the table\n");
         } else {
-            echo $user->name. " ". $user->surname. " Email: ".$user->email. "\n";
+            fwrite(STDOUT,$user->name. " ". $user->surname. " Email: ".$user->email. "\n");
             if(!isset($options['dry_run'])) {
                 $db->query('INSERT INTO users(name, surname, email) VALUES (?, ?, ?)', 'sss', [
                         $user->name,
@@ -89,7 +89,7 @@ if(isset($options['file']) && !isset($options['create_table'])) {
         }
 
     }, $users);
-    echo "Finished processing users.\n";
+    fwrite(STDOUT, "Finished processing users.\n");
 }
 
 if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
@@ -146,9 +146,9 @@ class Database {
             $statement->bind_param($types, ...$data);
         }
         if ($statement->execute() === TRUE) {
-            echo "Query was successfully\n";
+            fwrite(STDOUT,"Query was successfully\n");
         } else {
-            echo "Error executing the query: " . $this->connection->error."\n";
+            fwrite(STDOUT,"Error executing the query: " . $this->connection->error."\n");
         }
     }
 
