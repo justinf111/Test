@@ -1,11 +1,11 @@
-##User Upload
+## User Upload
 This application will assist in importing large sets of users into your user table. The user data will be process before going into the database to ensure it's on valid data touching the database.
 
-###Requirements
+### Requirements
 - MySQL Database
 - Access to the stty command (for password prompt)
 
-###Usage
+### Usage
 
 The application is running using the following command and directives below.
 ```
