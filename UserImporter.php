@@ -2,7 +2,7 @@
 
 $shortopts  = "h:";
 $shortopts .= "u:";
-$shortopts .= "p:";
+$shortopts .= "p";
 $shortopts .= "d:";
 
 $longopts  = [
@@ -23,12 +23,15 @@ if(isset($options['help'])) {
     fwrite(STDOUT, "-d – MySQL database (defaults to user_upload)\n");
     fwrite(STDOUT, "--help – which will output the above list of directives with details.\n");
 }
-$db = null;
 
-if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
-    $db = new Database($options['h'], $options['u'], $options['p'] ?? '',$options['d'] ?? 'user_upload');
-    $db->open();
-    $db->isConnected();
+if(requiresDatabase($options)) {
+    if(hasDatabaseCredentials($options)) {
+        $db = new Database($options['h'], $options['u'], getPassword(),$options['d'] ?? 'user_upload');
+        $db->open();
+        $db->isConnected();
+    } else {
+        die("The required database credentials being host (-h), username (-u) and password (-p) have not been set.\n");
+    }
 }
 
 if(isset($options['create_table']) && !isset($options['dry_run'])) {
@@ -77,7 +80,7 @@ if(isset($options['file']) && !isset($options['create_table'])) {
             fwrite(STDOUT, $user->name. " ". $user->surname. " has an invalid email (".$user->email.") and will not be inserted into the table\n");
         } else {
             fwrite(STDOUT,$user->name. " ". $user->surname. " Email: ".$user->email. "\n");
-            if(!isset($options['dry_run'])) {
+            if(!isset($options['dry_run']) && hasDatabaseCredentials($options)) {
                 $db->query('INSERT INTO users(name, surname, email) VALUES (?, ?, ?)', 'sss', [
                         $user->name,
                         $user->surname,
@@ -92,7 +95,7 @@ if(isset($options['file']) && !isset($options['create_table'])) {
     fwrite(STDOUT, "Finished processing users.\n");
 }
 
-if((isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run'])) {
+if(requiresDatabase($options) && hasDatabaseCredentials($options)) {
     $db->close();
 }
 
@@ -159,4 +162,20 @@ class Database {
     public function close() {
         $this->connection->close();
     }
+}
+
+function requiresDatabase($options) {
+    return (isset($options['create_table']) || isset($options['file'])) && !isset($options['dry_run']);
+}
+
+function hasDatabaseCredentials($options) {
+    return count(array_diff(['h', 'u', 'p'], array_keys($options))) == 0;
+}
+
+function getPassword($prompt = "Enter Password:") {
+    fwrite(STDOUT, $prompt."\n");
+    system('stty -echo');
+    $password = trim(fgets(STDIN));
+    system('stty echo');
+    return $password;
 }
